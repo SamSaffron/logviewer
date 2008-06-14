@@ -1,0 +1,3 @@
+The idea is to build a simple cross platform GUI to browse through logs in real time. 
+
+Its looking like it will be using wxRuby for the UI.
