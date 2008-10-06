@@ -47,12 +47,16 @@ module RemoteLogger
       messages.each do |msg| 
         type, p1, p2, p3 = msg
         case type
+          when :request_count
+            @channel << [:count, @log.count]
           when :add_messages
             @log << p1
           when :add_message
             @log << p1
-          when :request_count
-            @channel << [:count, @log.count]
+            # note: we have no seperate message for requesting the count
+            #   instead we piggy back a count on request_messages
+            #   the reason is that this will be called much more often and 
+            #   it simplifies the protocol. 
           when :request_messages
             @channel << [:data, @log[p1], @log.count] 
         end

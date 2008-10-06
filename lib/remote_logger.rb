@@ -25,5 +25,6 @@ module RemoteLogger
   end 
   module DataStore
     autoload :Log, 'remote_logger/data_store/log'
+    autoload :RemoteLog, 'remote_logger/data_store/remote_log'
   end
 end 

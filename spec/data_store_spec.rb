@@ -19,14 +19,14 @@ describe Log do
   it "should be able to add messages to the log" do
     d = Time.now
 
-    [*0..9].each do |n| 
+    (0..9).each do |n| 
       @log << Message.new(d,Logger::Severity::INFO,"hello") 
     end 
 
     messages = @log[0..9] 
     messages.length.should == 10 
 
-    [*0..9].each do |n| 
+    (0..9).each do |n| 
       messages[n].severity.should == Logger::Severity::INFO 
       messages[n].message.should == "hello"
       # dates are a little funny ... 
