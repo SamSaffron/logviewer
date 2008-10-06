@@ -52,9 +52,15 @@ module RemoteLogger::DataStore
     private 
 
     def add_message(msg)
-      @insert.bind_params(msg.time.to_f.to_s,msg.severity.to_s,msg.message) 
-      @insert.execute
-      @count += 1
+      begin 
+        @insert.bind_params(msg.time.to_f.to_s,msg.severity.to_s,msg.message) 
+        @insert.execute
+        @count += 1
+      rescue 
+        # don't crash in add_message, just lose a message. 
+        # TODO consider a retry ... 
+        puts "Crashed in add_message!"
+      end 
     end
 
     def init_db

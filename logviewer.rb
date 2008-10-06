@@ -1,29 +1,16 @@
 require 'rubygems'
 require 'wx'
 require 'logviewer_frame.rb'
-require 'logger_service.rb'
-require 'remote_logger.rb'
+require 'lib/remote_logger.rb'
+
+include RemoteLogger::Concurrency 
+include RemoteLogger::DataStore
+include RemoteLogger
+
 
 module LogViewer
 
   MAX_MESSAGES = 1000
-  SERVICE_DRB = 'druby://127.0.0.1:73442'
-
-  class MyLoggerService < LoggerService
-    attr_reader :data
-    
-    def initialize(virtual_list)
-      super()  
-      @virtual_list = virtual_list
-      @data = [] 
-    end
-
-    def log(time,severity,message) 
-     # puts "." 
-      @data << [time,severity,message]  
-      @virtual_list.set_item_count(data.length)
-    end 
-  end 
 
   class VirtualListView < Wx::ListCtrl
     
@@ -44,29 +31,37 @@ module LogViewer
 		  evt_timer(EVT_TIMER_ID) { refresh }
 		  timer.start(500)
 
-      # todo cleanup - move to its own class
-      pid = fork
-      if pid.nil?
-        c = PollChannel.new(SERVICE_DRB, true) 
-        s = MyLoggerService.new(c)
-        while c.alive? do 
-          sleep(0.1) 
-        end
-        exit 
-      end 
+      # TODO cleanup - move to its own class
+   #  pid = fork
+   #  if pid.nil?
+   #    s = LoggerService.new
+   #    while true do 
+   #      sleep(0.1) 
+   #    end
+   #    exit
+   #  end 
 
-      @channel = PollChannel.new(SERVICE_DRB, false) 
       # TODO cleanup let the service start  
-      sleep(0.1) 
-      @channel<<:get_item_count
-
-      @service = MyLoggerService.new(self) 
-      @service.start
+      
+      @remote_log = RemoteLog.new
+      @remote_log.on_count_changed proc{self.set_item_count @remote_log.count} 
 
     end
 
     def on_get_item_text(item, col)
-      return @service.data[item][col].to_s 
+      data = @remote_log[item] 
+      if data 
+        case col
+        when 0 
+          return data.severity.to_s 
+        when 1 
+          return data.message
+        when 2 
+          return data.time.to_s
+        end
+      end 
+
+      return ""
     end
 
     def on_get_item_column_image(item, col) 
@@ -76,12 +71,6 @@ module LogViewer
     def on_get_item_attr(item)
       nil
     end
-
-    def refresh
-      while msg = @service.receive
-        process_message(msg) 
-      end
-    end 
 
     def process_message(msg) 
     

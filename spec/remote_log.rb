@@ -16,6 +16,7 @@ describe RemoteLog do
     @logger_service = LoggerService.new('test.db', @server) 
     @logger_service.start
     @remote_log = RemoteLog.new(@client) 
+    @logger = Logger.new(Logger::Severity::DEBUG, @client) 
   end 
   
   after :each do 
@@ -25,7 +26,8 @@ describe RemoteLog do
 
   it "should be able to look up data in the log" do
      @remote_log.count.should == 0 
-     @client << [:add_message, Message.new(Time.now,Logger::Severity::INFO,"hello")] 
+
+     @logger.warn "hello"
      Timeout::timeout(5) do 
        while (!@remote_log[0])
          sleep 0.001 
