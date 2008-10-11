@@ -4,7 +4,6 @@ require 'drb'
 dir = File.dirname(__FILE__) 
 $LOAD_PATH.unshift(dir) unless $LOAD_PATH.include?(dir) 
 
-
 # Library used for logging events to a remote server
 #
 # All transport is over drb, meant as a replacement for the standard

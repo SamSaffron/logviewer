@@ -2,11 +2,13 @@ require 'rubygems'
 require 'wx'
 require 'logviewer_frame.rb'
 require 'lib/remote_logger.rb'
+require 'lib/prefs.rb'
+require 'yaml'
 
 include RemoteLogger::Concurrency 
 include RemoteLogger::DataStore
 include RemoteLogger
-
+include Wx
 
 module LogViewer
 
@@ -26,6 +28,7 @@ module LogViewer
       set_column_width(1,175)
       set_column_width(2,175)
       set_item_count(0)
+      
 
       timer = Wx::Timer.new(self, EVT_TIMER_ID)
 		  evt_timer(EVT_TIMER_ID) { refresh }
@@ -43,8 +46,8 @@ module LogViewer
 
       # TODO cleanup let the service start  
       
-      @remote_log = RemoteLog.new
-      @remote_log.on_count_changed proc{self.set_item_count @remote_log.count} 
+   #   @remote_log = RemoteLog.new
+    #  @remote_log.on_count_changed proc{self.set_item_count @remote_log.count} 
 
     end
 
@@ -80,8 +83,10 @@ module LogViewer
 
   class MainFrame < LogviewerFrame 
     
-    def initialize(parent = nil)
-      super()
+    def initialize(*params)
+      position = Point.new(100, 100)
+      size = Size.new(200, 200)
+      super(nil, -1, "Title", position, size)
     
       @log_text.set_value "Hello world"
 
@@ -99,15 +104,32 @@ module LogViewer
     end
   end
 
+
  
   class MyApp < Wx::App
     def on_init
-      f = MainFrame.new
+      @prefs = Prefs.load('window.prefs',100,200,200,300)
+      
+      pos = Point.new(@prefs.position.x,@prefs.position.y)
+      size = Size.new(@prefs.size.width,@prefs.size.height)
+
+      f = Wx::Frame.new(nil, -1, "Title", pos, size)
       f.show
-      t = Wx::Timer.new(self, 55)
-      evt_timer(55) { Thread.pass }
-      t.start(100)
+     
+      f.evt_close do |event|
+        frame = event.get_event_object
+        @prefs.size = frame.size
+        @prefs.position = frame.position
+        @prefs.save!
+        event.skip
+      end
+      
+      #t = Wx::Timer.new(self, 55)
+      #evt_timer(55) { Thread.pass }
+      #t.start(100)
+      
     end
+
   end
   MyApp.new.main_loop
 

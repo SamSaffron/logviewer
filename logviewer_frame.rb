@@ -11,8 +11,13 @@ class LogviewerFrame < Wx::Frame
 	attr_reader :main_splitter_window, :top_panel, :bottom_panel,
               :log_text
 	
-	def initialize(parent = nil)
-		super()
+	def initialize(*params)
+	#	super(*params)
+		
+    position = Point.new(100, 100)
+    size = Size.new(200, 200)
+    super(nil, -1, "Title", position, size)
+		
 		xml = Wx::XmlResource.get
 		xml.flags = 2 # Wx::XRC_NO_SUBCLASSING
 		xml.init_all_handlers
