@@ -18,9 +18,11 @@ module LogViewer
     
     EVT_TIMER_ID = 6003
 
-    def initialize(parent) 
+    def initialize(parent, textbox) 
       super(parent, -1, Wx::DEFAULT_POSITION, Wx::DEFAULT_SIZE, Wx::LC_REPORT | Wx::LC_VIRTUAL | Wx::LC_HRULES | Wx::LC_VRULES)
      
+      @textbox = textbox
+
       insert_column(0,"Severity")
       insert_column(1,"Message")
       insert_column(2,"Time")
@@ -33,6 +35,12 @@ module LogViewer
       timer = Wx::Timer.new(self, EVT_TIMER_ID)
 		  evt_timer(EVT_TIMER_ID) { refresh }
 		  timer.start(500)
+
+      @red_text = Wx::ListItemAttr.new()
+      @red_text.set_text_colour(Wx::Colour.new("RED"))
+
+
+      evt_list_item_selected(get_id()) {|event| on_item_selected(event)}
 
       # TODO cleanup - move to its own class
    #  pid = fork
@@ -58,7 +66,7 @@ module LogViewer
         when 0 
           return data.severity.to_s 
         when 1 
-          return data.message
+          return data.message[0..100]
         when 2 
           return data.time.to_s
         end
@@ -72,11 +80,17 @@ module LogViewer
     end
 
     def on_get_item_attr(item)
+      data = @remote_log[item]
+      if data and data.severity >= Logger::Severity::WARN        
+        return @red_text
+      end
       nil
     end
 
-    def process_message(msg) 
-    
+    def on_item_selected(event)
+      data = @remote_log[event.get_index()]
+      @textbox.clear
+      @textbox.write_text(data.message)
     end
 
   end
@@ -113,20 +127,31 @@ module LogViewer
       pos = Point.new(@prefs.position.x,@prefs.position.y)
       size = Size.new(@prefs.size.width,@prefs.size.height)
 
-      f = Wx::Frame.new(nil, -1, "Title", pos, size)
+      f = Wx::Frame.new(nil, -1, "Ruby Logviewer", pos, size)
       
       splitter = SplitterWindow.new(f, -1)
       
       
       
-      p1 = Wx::Panel.new(splitter, -1)
-      vb = VirtualListView.new(p1)
+      p1 = Wx::Panel.new(splitter, -1)     
+      p2 = Wx::Panel.new(splitter, -1)
+
+
+      textbox = Wx::TextCtrl.new(p2, -1, "", Wx::DEFAULT_POSITION, Wx::Size.new(200,100),
+                            Wx::TE_MULTILINE)
+
+
+
+      vb = VirtualListView.new(p1,textbox)
       sizer = Wx::BoxSizer.new(Wx::VERTICAL)
       sizer.add(vb, 1, Wx::GROW|Wx::ALL, 2)
       p1.set_sizer(sizer)
-      
-      p2 = Wx::Panel.new(splitter, -1)
-      Wx::StaticText.new(p2, -1, "Log info")
+
+
+      sizer2 = Wx::BoxSizer.new(Wx::VERTICAL)
+      sizer2.add(textbox, 1, Wx::GROW|Wx::ALL, 2)
+      p2.set_sizer(sizer2)
+
       
       splitter.set_minimum_pane_size(20)
       splitter.split_horizontally(p1, p2, 100)
