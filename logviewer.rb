@@ -46,8 +46,8 @@ module LogViewer
 
       # TODO cleanup let the service start  
       
-   #   @remote_log = RemoteLog.new
-    #  @remote_log.on_count_changed proc{self.set_item_count @remote_log.count} 
+      @remote_log = RemoteLog.new
+      @remote_log.on_count_changed proc{self.set_item_count @remote_log.count} 
 
     end
 
@@ -114,8 +114,25 @@ module LogViewer
       size = Size.new(@prefs.size.width,@prefs.size.height)
 
       f = Wx::Frame.new(nil, -1, "Title", pos, size)
+      
+      splitter = SplitterWindow.new(f, -1)
+      
+      
+      
+      p1 = Wx::Panel.new(splitter, -1)
+      vb = VirtualListView.new(p1)
+      sizer = Wx::BoxSizer.new(Wx::VERTICAL)
+      sizer.add(vb, 1, Wx::GROW|Wx::ALL, 2)
+      p1.set_sizer(sizer)
+      
+      p2 = Wx::Panel.new(splitter, -1)
+      Wx::StaticText.new(p2, -1, "Log info")
+      
+      splitter.set_minimum_pane_size(20)
+      splitter.split_horizontally(p1, p2, 100)
       f.show
-     
+      
+
       f.evt_close do |event|
         frame = event.get_event_object
         @prefs.size = frame.size
